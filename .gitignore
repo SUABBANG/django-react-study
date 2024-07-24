@@ -17,3 +17,6 @@ mediafiles
 draft_models.py
 
 *.sqlite3
+
+**/migrations/
+**__init__.py
