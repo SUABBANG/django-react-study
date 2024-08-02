@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path(route="core/",view=include("core.urls")),
     path(route="hottrack/",view=include("hottrack.urls")),
+    path(route="blog/",view=include("blog.urls")),
     path("",RedirectView.as_view(url="/hottrack/")), # 최상이 주소 리다이렉트
 ]
 

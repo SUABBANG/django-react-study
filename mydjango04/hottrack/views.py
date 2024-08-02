@@ -5,13 +5,15 @@ from typing import Literal
 from urllib.request import urlopen
 
 import pandas as pd
+from django.conf import settings
 from django.db.models import QuerySet, Q
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404
 
 from hottrack.models import Song
 from hottrack.utils.cover import make_cover_image
-from django.views.generic import DetailView, ListView, YearArchiveView, MonthArchiveView, DayArchiveView
+from django.views.generic import DetailView, ListView, YearArchiveView, MonthArchiveView, DayArchiveView, \
+    TodayArchiveView, WeekArchiveView, ArchiveIndexView, DateDetailView
 
 
 class IndexView(ListView):
@@ -164,6 +166,53 @@ class SongMonthArchiveView(MonthArchiveView):
     month_format = "%m"
 
 class SongDayArchiveView(DayArchiveView):
+    model = Song
+    date_field = "release_date"
+    month_format = "%m"
+
+class SongTodayArchiveView(TodayArchiveView):
+    model = Song
+    date_field = "release_date"
+
+    # DEBUG=True 에서만 get_dated_items 메서드를 재정의합니다.
+    # 오늘 날짜 데이터를 조회할 때, 테스트를 위해 가짜 오늘 날짜를 지원하겠습니다.
+    if settings.DEBUG:
+
+        def get_dated_items(self):
+            """지정 날짜의 데이터를 조회"""
+            fake_today = self.request.GET.get("fake-today", "")
+            try:
+                year, month, day = map(int, fake_today.split("-", 3))
+                return self._get_dated_items(datetime.date(year, month, day))
+            except ValueError:
+                # fake_today 파라미터가 없거나 날짜 형식이 잘못되었을 경우
+                return super().get_dated_items()
+
+class SongWeekArchiveView(WeekArchiveView):
+    model = Song
+    date_field = "release_date"
+    # date_list_period = "week"
+    # 템플릿 필터 date의 "W" 포맷은 ISO 8601에 따라 한 주의 시작을 월요일로 간주합니다.
+    #  - 템플릿 단에서 한 주의 시작을 일요일로 할려면 커스텀 템플릿 태그 구현이 필요합니다.
+    week_format = "%W"  # "%U" (디폴트, 한 주의 시작을 일요일), %W (한 주의 시작을 월요일)
+
+# year 단위로 모든 year의 date_list를 뽑습니다.
+class SongArchiveIndexView(ArchiveIndexView):
+    model = Song
+    # queryset = Song.objects.all()
+    date_field = "release_date"  # 기준 날짜 필드
+    paginate_by = 10
+
+    # date_list_period = "year"  # 단위 : year (디폴트), month, day, week
+    def get_date_list_period(self):
+        # URL Captured Value에 date_list_period가 없으면, date_list_period 속성을 활용합니다.
+        return self.kwargs.get("date_list_period", self.date_list_period)
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data["date_list_period"] = self.get_date_list_period()
+
+class SongDateDetailView(DateDetailView):
     model = Song
     date_field = "release_date"
     month_format = "%m"

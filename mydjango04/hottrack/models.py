@@ -6,12 +6,15 @@ from typing import Dict
 from urllib.parse import quote
 
 from django.db import models
+from django.urls import reverse
+from django.utils.text import slugify
 
 
 # 파이썬 3.7부터 지원
 # @dataclass
 class Song(models.Model):
     melon_uid = models.CharField(max_length=20, unique=True)
+    slug = models.SlugField(max_length=100, allow_unicode=True, blank=True)
     rank = models.PositiveSmallIntegerField()
     album_name = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
@@ -21,6 +24,30 @@ class Song(models.Model):
     genre = models.CharField(max_length=100)
     release_date = models.DateField()
     like_count = models.PositiveIntegerField()
+
+    class Meta:
+        indexes=[
+            models.Index(fields=['slug']),
+        ]
+    def save(self, *args, **kwargs):
+        self.slugify()
+        super().save(*args, **kwargs)
+
+    def slugify(self, force=False):
+        if force or not self.slug:
+            slug_max_length = self._meta.get_field("slug").max_length
+            self.slug = self.slug[:slug_max_length]
+    def get_absolute_url(self) -> str:
+        slug = slugify(self.name, allow_unicode=True)
+        return reverse(
+            "song_date_detail",
+            args=[
+                self.release_date.year,
+                self.release_date.month,
+                self.release_date.day,
+                slug,
+            ],
+        )
 
     @property
     def melon_detail_url(self) -> str:
@@ -34,7 +61,7 @@ class Song(models.Model):
 
     @classmethod
     def from_dict(cls, data: Dict) -> Song:
-        return cls(
+        instance =  cls(
             melon_uid=data.get("곡일련번호"),
             rank=int(data.get("순위")),
             album_name=data.get("앨범"),
@@ -46,3 +73,5 @@ class Song(models.Model):
             release_date=date.fromisoformat(data.get("발매일")),
             like_count=int(data.get("좋아요")),
         )
+        instance.slugify()
+        return instance
