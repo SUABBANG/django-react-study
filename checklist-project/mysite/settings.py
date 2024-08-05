@@ -9,24 +9,38 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import sys
 from pathlib import Path
+
+from environ import Env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = Env()
+
+ENV_PATH = BASE_DIR / ".env"
+if ENV_PATH.exists():
+    with ENV_PATH.open(encoding="utf-8") as f:
+        env.read_env(f, overwrite=True)
+else:
+    print("not found:", ENV_PATH, file=sys.stderr)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-s9^l1%5%_4(7&kvsll+)+s6*re-gjxp93!zk!*@5#=$jm4=m0g"
+SECRET_KEY = env.str(
+    "SECRET_KEY",
+    default="django-insecure-dn^kymsy5h(e&jtgba0r#jh1v6!9gao1e2#g!5#76b)5=dh2s)",
+)
+
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG", default=True)
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 # Application definition
 
@@ -37,15 +51,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_bootstrap5",
+    # apps
     "django_extensions",
+    "template_partials",
+    # local apps
     "core",
-    "hottrack",
-    "blog",
-    "shop",
 ]
 if DEBUG:
-    INSTALLED_APPS += [
+    INSTALLED_APPS +=[
         "debug_toolbar",
     ]
 
@@ -59,10 +72,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 if DEBUG:
-    MIDDLEWARE = [
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    MIDDLEWARE =[
+        "debug_toolbar.middleware.DebugToolbarMiddleware"
     ] + MIDDLEWARE
-
 
 ROOT_URLCONF = "mysite.urls"
 
@@ -77,7 +89,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "core.context_processors.messages_list"
             ],
         },
     },
@@ -89,25 +100,14 @@ WSGI_APPLICATION = "mysite.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-import pymysql
-pymysql.install_as_MySQLdb()
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "HOST": "localhost",  # 서버 주소
-        "PORT": "5432",       # 서버 포트
-        "NAME": "mydb",       # 데이터베이스 명
-        "USER": "myuser",     # 유저명
-        "PASSWORD": "mypw",   # 암호
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -130,7 +130,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = env.str("LANGUAGE_CODE", default="ko-kr")
 
 TIME_ZONE = "UTC"
 
@@ -149,9 +149,4 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-from django.contrib.messages import constants as messages_constants
-
-if DEBUG:
-    MESSAGE_LEVEL = messages_constants.DEBUG
-
-INTERNAL_IPS = ["127.0.0.1"]
+INTERNAL_IPS = env.list("INTERNAL_IPS", default=["127.0.0.1"])
