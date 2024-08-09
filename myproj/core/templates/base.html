@@ -1,5 +1,4 @@
 {% load component_tags static %}
-
 <!doctype html>
 <html lang="ko">
 <head>
@@ -16,13 +15,11 @@
     <div class="container">
         <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
             <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
-                Django Project Practice
+                장고 프로젝트
             </a>
-
             <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
                 <li><a href="#" class="nav-link px-2 text-white">Features</a></li>
             </ul>
-
             <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
                 <input type="search"
                        class="form-control form-control-dark text-bg-dark"
@@ -31,26 +28,32 @@
             </form>
 
             <div class="text-end">
-                <button type="button" class="btn btn-outline-light me-2">Login</button>
-                <button type="button" class="btn btn-warning">Sign-up</button>
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'accounts:login' %}"
+                       class="btn btn-outline-light me-2">로그인</a>
+                    <a href="#"
+                       class="btn btn-warning">회원가입</a>
+                {% else %}
+                    <a href="{% url 'accounts:profile' %}"
+                       class="btn btn-outline-light me-2">프로필</a>
+                    <a href="{% url 'accounts:logout' %}"
+                       class="btn btn-warning">로그아웃</a>
+                {% endif %}
             </div>
         </div>
     </div>
 </header>
+</header>
 <main class="py-5">
     <div class="container">
-        {% block contents %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </div>
 </main>
-
 <footer class="text-body-secondary py-5">
-    <div class="continer">
+    <div class="container">
         &copy; 파이썬 사랑방
     </div>
 </footer>
-
-
 {% if debug %}
     <script src="{% static 'htmx/1.9.11/htmx.js' %}"></script>
 {% else %}
